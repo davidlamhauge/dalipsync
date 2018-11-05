@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QFileDialog>
+#include <QFile>
 #include <QSettings>
 #include <QtMath>
 #include <QHoverEvent>
@@ -11,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    loadPosition();
     init();
 }
 
@@ -31,10 +33,10 @@ void MainWindow::init()
     connect(player, &QMediaPlayer::durationChanged, this, &MainWindow::setDuration);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     connect(ui->actionLoad_Audio, &QAction::triggered, this, &MainWindow::load);
+    connect(ui->actionSave, &QAction::triggered, this, &MainWindow::save);
     connect(ui->actionSave_as, &QAction::triggered, this, &MainWindow::saveAs);
     connect(ui->tableWidget, &QTableWidget::itemEntered, this, &MainWindow::playPhoneme);
     connect(ui->tableWidget, &QTableWidget::itemPressed, this, &MainWindow::playPhoneme);
-    loadPosition();
  //   connect(ui->tableWidget, &QTableWidget::entered, this, &MainWindow::mouseMoveEvent);
 }
 
@@ -44,7 +46,6 @@ void MainWindow::load()
                                     "", tr("Audio files (*.ogg *.wav *.mp3)"));
     if (fileName.isEmpty()) { return; }
     mFileName = fileName.right(fileName.length() - fileName.lastIndexOf('/') - 1);
-    qDebug() << fileName << " " << mFileName;
     player->setMedia(QUrl::fromLocalFile(fileName));
 }
 
@@ -55,7 +56,21 @@ void MainWindow::open()
 
 void MainWindow::save()
 {
-
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Lipsyns File"),
+                                    "", tr("Lipsync files (*.lip2d)"));
+    if (fileName.isEmpty()) { return; }
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly)) { return; }
+    QTextStream out(&file);
+    // FIRST line: CHARACTER_NAME FPS SIZE_IN_FRAMES FILENAME
+    out << "DIAL 25 " << ui->tableWidget->columnCount() << " " << mFileName << '\n';
+    for (int i = 0; i < ui->tableWidget->columnCount(); i++)
+    {
+        if (!ui->tableWidget->item(1, i)->text().isEmpty())
+            out << i << " " << ui->tableWidget->item(1, i)->text() << '\n';
+    }
+    file.close();
+    savePosition();
 }
 
 void MainWindow::saveAs()
@@ -81,7 +96,11 @@ void MainWindow::setDuration(qint64 qint)
         mTabWidgetItem = new QTableWidgetItem("");
         mTabWidgetItem->setBackgroundColor(Qt::yellow);
         ui->tableWidget->setItem(0, i, mTabWidgetItem);
+        mTabWidgetItem = new QTableWidgetItem("");
+        ui->tableWidget->setItem(1, i, mTabWidgetItem);
     }
+    mTabWidgetItem = new QTableWidgetItem("G");
+    ui->tableWidget->setItem(1,5,mTabWidgetItem);
 }
 
 void MainWindow::playPhoneme(QTableWidgetItem *twItem)
@@ -109,9 +128,10 @@ void MainWindow::loadPosition()
 {
     QSettings settings("dalanima", "dalipsync");
     settings.beginGroup("MainWindow");
-    QRect myrect = settings.value("position", 0).toRect();
+    QRect myrect = settings.value("position", QRect(0, 0, 600, 300)).toRect();
     setGeometry(myrect);
     settings.endGroup();
+    qDebug() << myrect.width();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
