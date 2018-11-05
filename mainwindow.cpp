@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    loadPosition();
+    qApp->installEventFilter(this);
     init();
 }
 
@@ -37,11 +37,12 @@ void MainWindow::init()
     connect(ui->actionSave_as, &QAction::triggered, this, &MainWindow::saveAs);
     connect(ui->tableWidget, &QTableWidget::itemEntered, this, &MainWindow::playPhoneme);
     connect(ui->tableWidget, &QTableWidget::itemPressed, this, &MainWindow::playPhoneme);
- //   connect(ui->tableWidget, &QTableWidget::entered, this, &MainWindow::mouseMoveEvent);
+    loadPosition();
 }
 
 void MainWindow::load()
 {
+    loadPosition();
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Audio File"),
                                     "", tr("Audio files (*.ogg *.wav *.mp3)"));
     if (fileName.isEmpty()) { return; }
@@ -67,7 +68,7 @@ void MainWindow::save()
     for (int i = 0; i < ui->tableWidget->columnCount(); i++)
     {
         if (!ui->tableWidget->item(1, i)->text().isEmpty())
-            out << i << " " << ui->tableWidget->item(1, i)->text() << '\n';
+            out << i + 1 << " " << ui->tableWidget->item(1, i)->text() << '\n';
     }
     file.close();
     savePosition();
@@ -99,14 +100,12 @@ void MainWindow::setDuration(qint64 qint)
         mTabWidgetItem = new QTableWidgetItem("");
         ui->tableWidget->setItem(1, i, mTabWidgetItem);
     }
-    mTabWidgetItem = new QTableWidgetItem("G");
-    ui->tableWidget->setItem(1,5,mTabWidgetItem);
 }
 
 void MainWindow::playPhoneme(QTableWidgetItem *twItem)
 {
-    int start = (twItem->column() + 1) * 25;
-    player->setPosition(start);
+    mPosition = (twItem->column() + 1) * 25;
+    player->setPosition(mPosition);
     player->play();
     QTimer::singleShot((1000 * 3) / 25, this, SLOT(stopPlayPhoneme()));
 }
@@ -114,6 +113,29 @@ void MainWindow::playPhoneme(QTableWidgetItem *twItem)
 void MainWindow::stopPlayPhoneme()
 {
     player->stop();
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        if (watched == ui->tableWidget)
+        {
+            QKeyEvent * ke = static_cast<QKeyEvent *>(event);
+            switch (ke->key()) {
+            case 8: // Backspace
+                mTabWidgetItem = new QTableWidgetItem("");
+                ui->tableWidget->setItem(1, ui->tableWidget->currentColumn(), mTabWidgetItem);
+                break;
+            default:
+                QString s = ke->text();
+                mTabWidgetItem = new QTableWidgetItem(s.toUpper());
+                ui->tableWidget->setItem(1, ui->tableWidget->currentColumn(), mTabWidgetItem);
+                break;
+            }
+        }
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 void MainWindow::savePosition()
@@ -136,6 +158,6 @@ void MainWindow::loadPosition()
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
 {
-    qDebug() << e->text();
+    qDebug() << "Keypress: " << e->text();
 }
 

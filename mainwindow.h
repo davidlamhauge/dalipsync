@@ -29,11 +29,14 @@ public slots:
     void playPhoneme(QTableWidgetItem* twItem);
     void stopPlayPhoneme();
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+
 private:
 
     void savePosition();
     void loadPosition();
-    void keyPressEvent(QKeyEvent *e);
 
     Ui::MainWindow *ui;
     QMediaPlayer* player;
@@ -41,6 +44,7 @@ private:
     QTableWidgetItem* mTabWidgetItem = nullptr;
     QTimer* timer = nullptr;
 
+    qint64 mPosition;
     qint64 mDuration;
     qint64 mFramesInAudio;
 };

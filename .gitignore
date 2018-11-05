@@ -1,3 +1,33 @@
 mouths/*
-*.pro.*
+mouths/*.*
+# C++ objects and libs
 
+*.slo
+*.lo
+*.o
+*.a
+*.la
+*.lai
+*.so
+*.dll
+*.dylib
+.obj
+
+# Qt-es
+
+.qmake.cache
+.qmake.stash
+*.pro.user
+*.pro.user.*
+*.moc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+Makefile*
+*-build-*
+.moc
+moc_predefs.h
+
+Makefile
+Makefile.Debug
+Makefile.Release
