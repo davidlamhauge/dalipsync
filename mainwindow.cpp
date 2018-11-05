@@ -33,6 +33,7 @@ void MainWindow::init()
     connect(ui->actionLoad_Audio, &QAction::triggered, this, &MainWindow::load);
     connect(ui->actionSave_as, &QAction::triggered, this, &MainWindow::saveAs);
     connect(ui->tableWidget, &QTableWidget::itemEntered, this, &MainWindow::playPhoneme);
+    connect(ui->tableWidget, &QTableWidget::itemPressed, this, &MainWindow::playPhoneme);
     loadPosition();
  //   connect(ui->tableWidget, &QTableWidget::entered, this, &MainWindow::mouseMoveEvent);
 }
