@@ -24,8 +24,8 @@ void MainWindow::init()
     mFileName.clear();
     mDuration = 0;
     mFramesInAudio = 0;
-    ui->tableWidget->setRowHeight(0, 50);
-    ui->tableWidget->setRowHeight(1, 20);
+    ui->tableWidget->setRowHeight(0, 70);
+    ui->tableWidget->setRowHeight(1, 30);
 
     player = new QMediaPlayer;
     connect(player, &QMediaPlayer::durationChanged, this, &MainWindow::setDuration);
@@ -76,7 +76,7 @@ void MainWindow::setDuration(qint64 qint)
     ui->tableWidget->setColumnCount(mFramesInAudio + 1);
     for (int i = 0; i <= mFramesInAudio; i++)
     {
-        ui->tableWidget->setColumnWidth(i, 20);
+        ui->tableWidget->setColumnWidth(i, 30);
         mTabWidgetItem = new QTableWidgetItem("");
         mTabWidgetItem->setBackgroundColor(Qt::yellow);
         ui->tableWidget->setItem(0, i, mTabWidgetItem);
