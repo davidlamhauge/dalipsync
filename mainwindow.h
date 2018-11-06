@@ -25,6 +25,8 @@ public slots:
     void save();
     void saveAs();
     void close();
+    void setFps(int i);
+    void setCharName(QString name);
     void setDuration(qint64 qint);
     void playPhoneme(QTableWidgetItem* twItem);
     void stopPlayPhoneme();
@@ -41,9 +43,11 @@ private:
     Ui::MainWindow *ui;
     QMediaPlayer* player;
     QString mFileName;
+    QString mCharName;
     QTableWidgetItem* mTabWidgetItem = nullptr;
     QTimer* timer = nullptr;
 
+    int mFps;
     qint64 mPosition;
     qint64 mDuration;
     qint64 mFramesInAudio;

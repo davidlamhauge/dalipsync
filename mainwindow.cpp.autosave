@@ -47,6 +47,7 @@ void MainWindow::init()
 
 void MainWindow::load()
 {
+    
     loadPosition();
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Audio File"),
                                     "", tr("Audio files (*.ogg *.wav *.mp3)"));
