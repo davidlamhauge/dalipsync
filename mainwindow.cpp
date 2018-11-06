@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QtMath>
 #include <QHoverEvent>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -29,11 +30,13 @@ void MainWindow::init()
     mFps = 25;
     mDuration = 0;
     mFramesInAudio = 0;
+    sl.clear();
     ui->tableWidget->setRowHeight(0, 70);
     ui->tableWidget->setRowHeight(1, 30);
 
     player = new QMediaPlayer;
     connect(player, &QMediaPlayer::durationChanged, this, &MainWindow::setDuration);
+    connect(player, &QMediaPlayer::positionChanged, this, &MainWindow::newPosition);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     connect(ui->actionLoad_Audio, &QAction::triggered, this, &MainWindow::load);
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open);
@@ -63,34 +66,48 @@ void MainWindow::open()
     if (fileName.isEmpty()) { return; }
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) { return; }
-    qDebug() << fileName;
     QTextStream in(&file);
-    qDebug() << "check 1";
     QString tmp = in.readLine();
-    QStringList sl = tmp.split(" ");
-    mCharName = sl.at(0);
-    ui->leAddName->setText(mCharName);
-    mFps = sl.at(1).toInt();
-    ui->sBoxFps->setValue(mFps);
-    if (sl.size() > 2)
-        mFramesInAudio = sl.at(2).toInt();
-    if (sl.size() > 3)
-        mFileName = sl.at(3);
-    qDebug() << "check 2";
-    setDuration((mFramesInAudio * 1000) / mFps);
+    sl = tmp.split(" ");
+    if (sl.size() < 4)
+    {
+        int ret = QMessageBox::information(this,
+                                           tr("Not enough data!"),
+                                           tr("File lacks audio file information"),
+                                           QMessageBox::Ok);
+        Q_UNUSED(ret);
+        file.close();
+        return;
+    }
+    mFileName = sl.at(3);
+    QFile f(mFileName);
+    if (!f.exists())
+    {
+        int ret = QMessageBox::information(this,
+                                           tr("File not found!"),
+                                           tr("File path lacks information"),
+                                           QMessageBox::Ok);
+        Q_UNUSED(ret);
+        file.close();
+        return;
+    }
+    mInfoList.clear();
+    mInfoList.append(tmp);
+    qDebug() << tmp;
     tmp.clear();
     sl.clear();
-    qDebug() << "check 3";
     while (!in.atEnd()) {
         tmp = in.readLine();
+        mInfoList.append(tmp);
+        qDebug() << tmp;
         sl = tmp.split(" ");
         mTabWidgetItem = new QTableWidgetItem(sl.at(1));
         ui->tableWidget->setItem(1, sl.at(0).toInt() - 1, mTabWidgetItem);
         sl.clear();
     }
     file.close();
-    player->setMedia(QUrl::fromLocalFile(fileName));
-    qDebug() << player->errorString() << " error";
+    player->setMedia(QUrl::fromLocalFile(mFileName));
+    player->play();
 }
 
 void MainWindow::save()
@@ -138,20 +155,39 @@ void MainWindow::setCharName(QString name)
 
 void MainWindow::setDuration(qint64 qint)
 {
+    if (mDuration == qint) { return; }
     mDuration = qint;
-    qDebug() << mDuration << " ms";
     mFramesInAudio = qCeil((mDuration * mFps) / 1000);
-    qDebug() << mFramesInAudio << " frames";
     ui->tableWidget->setColumnCount(mFramesInAudio + 1);
     for (int i = 0; i <= mFramesInAudio; i++)
     {
-        ui->tableWidget->setColumnWidth(i, 30);
+        ui->tableWidget->setColumnWidth(i, 20);
         mTabWidgetItem = new QTableWidgetItem("");
         mTabWidgetItem->setBackgroundColor(Qt::yellow);
         ui->tableWidget->setItem(0, i, mTabWidgetItem);
         mTabWidgetItem = new QTableWidgetItem("");
         ui->tableWidget->setItem(1, i, mTabWidgetItem);
     }
+    QString s = mInfoList.at(0);
+    sl = s.split(" ");
+    mCharName = sl.at(0);
+    ui->leAddName->setText(mCharName);
+    mFps = sl.at(1).toInt();
+    ui->sBoxFps->setValue(mFps);
+    mFramesInAudio = sl.at(2).toInt();
+    for (int i = 1; i < mInfoList.length(); i++)
+    {
+        sl = mInfoList.at(i).split(" ");
+        mTabWidgetItem = new QTableWidgetItem(sl.at(1));
+        ui->tableWidget->setItem(1, sl.at(0).toInt(), mTabWidgetItem);
+    }
+}
+
+void MainWindow::newPosition(qint64 qint)
+{
+    int pos = qFloor(qint / mFramesInAudio);
+    ui->tableWidget->setCurrentCell(0, pos);
+    ui->sliderProgress->setValue((qint * 99) / mDuration);
 }
 
 void MainWindow::playPhoneme(QTableWidgetItem *twItem)

@@ -28,6 +28,7 @@ public slots:
     void setFps(int i);
     void setCharName(QString name);
     void setDuration(qint64 qint);
+    void newPosition(qint64 qint);
     void playPhoneme(QTableWidgetItem* twItem);
     void stopPlayPhoneme();
 
@@ -44,8 +45,9 @@ private:
     QMediaPlayer* player;
     QString mFileName;
     QString mCharName;
+    QStringList mInfoList;
+    QStringList sl;
     QTableWidgetItem* mTabWidgetItem = nullptr;
-    QTimer* timer = nullptr;
 
     int mFps;
     qint64 mPosition;
