@@ -47,6 +47,7 @@ void MainWindow::init()
 
 void MainWindow::load()
 {
+
     loadPosition();
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Audio File"),
                                     "", tr("Audio files (*.ogg *.wav *.mp3)"));
@@ -90,7 +91,7 @@ void MainWindow::open()
     }
     file.close();
     player->setMedia(QUrl::fromLocalFile(fileName));
-    qDebug() << player->errorString() << " error";
+    qDebug() << player->media().canonicalUrl();
 }
 
 void MainWindow::save()
