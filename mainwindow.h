@@ -28,7 +28,7 @@ public slots:
     void setFps(int i);
     void setCharName(QString name);
     void setDuration(qint64 qint);
-    void newPosition(qint64 qint);
+    void setvolume(int i);
     void playPhoneme(QTableWidgetItem* twItem);
     void stopPlayPhoneme();
 
@@ -50,6 +50,7 @@ private:
     QTableWidgetItem* mTabWidgetItem = nullptr;
 
     int mFps;
+    int mCurrFrame;
     qint64 mPosition;
     qint64 mDuration;
     qint64 mFramesInAudio;

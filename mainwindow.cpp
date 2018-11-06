@@ -26,17 +26,19 @@ void MainWindow::init()
 {
     mFileName.clear();
     mCharName = "DIAL";
-
     mFps = 25;
     mDuration = 0;
     mFramesInAudio = 0;
+    mInfoList.append("Dial 25 200 x");
     sl.clear();
+
     ui->tableWidget->setRowHeight(0, 70);
     ui->tableWidget->setRowHeight(1, 30);
 
     player = new QMediaPlayer;
+
     connect(player, &QMediaPlayer::durationChanged, this, &MainWindow::setDuration);
-    connect(player, &QMediaPlayer::positionChanged, this, &MainWindow::newPosition);
+    connect(ui->sliderVolume, &QSlider::valueChanged, this, &MainWindow::setvolume);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     connect(ui->actionLoad_Audio, &QAction::triggered, this, &MainWindow::load);
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open);
@@ -50,18 +52,19 @@ void MainWindow::init()
 
 void MainWindow::load()
 {
-    loadPosition();
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Audio File"),
                                     "", tr("Audio files (*.ogg *.wav *.mp3)"));
     if (fileName.isEmpty()) { return; }
     mFileName = fileName;
+    mInfoList.clear();
+    mInfoList.append("DIAL 25 200 " + mFileName);
     player->setMedia(QUrl::fromLocalFile(fileName));
-    setDuration(player->duration());
+    savePosition();
 }
 
 void MainWindow::open()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Lipsyns File"),
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Lipsync File"),
                                     "", tr("Lipsync files (*.lip2d)"));
     if (fileName.isEmpty()) { return; }
     QFile file(fileName);
@@ -93,13 +96,18 @@ void MainWindow::open()
     }
     mInfoList.clear();
     mInfoList.append(tmp);
-    qDebug() << tmp;
+    QString s = mInfoList.at(0);
+    sl = s.split(" ");
+    mCharName = sl.at(0);
+    ui->leAddName->setText(mCharName);
+    mFps = sl.at(1).toInt();
+    ui->sBoxFps->setValue(mFps);
+    mFramesInAudio = sl.at(2).toInt();
     tmp.clear();
     sl.clear();
     while (!in.atEnd()) {
         tmp = in.readLine();
         mInfoList.append(tmp);
-        qDebug() << tmp;
         sl = tmp.split(" ");
         mTabWidgetItem = new QTableWidgetItem(sl.at(1));
         ui->tableWidget->setItem(1, sl.at(0).toInt() - 1, mTabWidgetItem);
@@ -107,12 +115,12 @@ void MainWindow::open()
     }
     file.close();
     player->setMedia(QUrl::fromLocalFile(mFileName));
-    player->play();
+    savePosition();
 }
 
 void MainWindow::save()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Lipsyns File"),
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Lipsync File"),
                                     "", tr("Lipsync files (*.lip2d)"));
     if (fileName.isEmpty()) { return; }
     if (!fileName.endsWith(".lip2d"))
@@ -134,7 +142,6 @@ void MainWindow::save()
 
 void MainWindow::saveAs()
 {
-    player->play();
 }
 
 void MainWindow::close()
@@ -157,24 +164,18 @@ void MainWindow::setDuration(qint64 qint)
 {
     if (mDuration == qint) { return; }
     mDuration = qint;
-    mFramesInAudio = qCeil((mDuration * mFps) / 1000);
+    int remains = mDuration % mFps;
+    mFramesInAudio = qCeil((mDuration + remains) / mFps);
     ui->tableWidget->setColumnCount(mFramesInAudio + 1);
     for (int i = 0; i <= mFramesInAudio; i++)
     {
-        ui->tableWidget->setColumnWidth(i, 20);
+        ui->tableWidget->setColumnWidth(i, 25);
         mTabWidgetItem = new QTableWidgetItem("");
         mTabWidgetItem->setBackgroundColor(Qt::yellow);
         ui->tableWidget->setItem(0, i, mTabWidgetItem);
         mTabWidgetItem = new QTableWidgetItem("");
         ui->tableWidget->setItem(1, i, mTabWidgetItem);
     }
-    QString s = mInfoList.at(0);
-    sl = s.split(" ");
-    mCharName = sl.at(0);
-    ui->leAddName->setText(mCharName);
-    mFps = sl.at(1).toInt();
-    ui->sBoxFps->setValue(mFps);
-    mFramesInAudio = sl.at(2).toInt();
     for (int i = 1; i < mInfoList.length(); i++)
     {
         sl = mInfoList.at(i).split(" ");
@@ -183,19 +184,18 @@ void MainWindow::setDuration(qint64 qint)
     }
 }
 
-void MainWindow::newPosition(qint64 qint)
+void MainWindow::setvolume(int i)
 {
-    int pos = qFloor(qint / mFramesInAudio);
-    ui->tableWidget->setCurrentCell(0, pos);
-    ui->sliderProgress->setValue((qint * 99) / mDuration);
+    player->setVolume(i);
 }
 
 void MainWindow::playPhoneme(QTableWidgetItem *twItem)
 {
+    mCurrFrame = twItem->column();
     mPosition = (twItem->column() + 1) * mFps;
     player->setPosition(mPosition);
     player->play();
-    QTimer::singleShot((1000 * 3) / mFps, this, SLOT(stopPlayPhoneme()));
+    QTimer::singleShot(150, this, SLOT(stopPlayPhoneme()));
 }
 
 void MainWindow::stopPlayPhoneme()
@@ -209,25 +209,31 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
     {
         if (watched == ui->tableWidget)
         {
+            int currCol = ui->tableWidget->currentColumn();
             QKeyEvent * ke = static_cast<QKeyEvent *>(event);
             switch (ke->key()) {
             case Qt::Key_Delete: // Delete
                 mTabWidgetItem = new QTableWidgetItem("");
-                ui->tableWidget->setItem(1, ui->tableWidget->currentColumn(), mTabWidgetItem);
+                ui->tableWidget->setItem(1, currCol, mTabWidgetItem);
                 break;
             case Qt::Key_Space:
-                qDebug() << "Space pressed";
                 if (player->state() == QMediaPlayer::StoppedState)
+                {
+                    player->setPosition(mFps * mCurrFrame);
                     player->play();
+                }
                 else if (player->state() == QMediaPlayer::PlayingState)
                     player->pause();
                 else if (player->state() == QMediaPlayer::PausedState)
+                {
+                    player->setPosition(mFps * mCurrFrame);
                     player->play();
+                }
                 break;
             default:
                 QString s = ke->text();
                 mTabWidgetItem = new QTableWidgetItem(s.toUpper());
-                ui->tableWidget->setItem(1, ui->tableWidget->currentColumn(), mTabWidgetItem);
+                ui->tableWidget->setItem(1, currCol, mTabWidgetItem);
                 break;
             }
         }
@@ -254,11 +260,10 @@ void MainWindow::loadPosition()
     }
     setGeometry(myrect);
     settings.endGroup();
-    qDebug() << myrect.width();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
 {
-    qDebug() << "Keypress: " << e->text();
+//    qDebug() << "Keypress: " << e->text();
 }
 

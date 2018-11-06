@@ -10,6 +10,17 @@
     <height>349</height>
    </rect>
   </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>400</height>
+   </size>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -32,32 +43,8 @@
           <height>16777215</height>
          </size>
         </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="Line" name="line_3">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="labProgress">
-        <property name="text">
-         <string>Progress:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSlider" name="sliderProgress">
-        <property name="maximumSize">
-         <size>
-          <width>100</width>
-          <height>16777215</height>
-         </size>
+        <property name="value">
+         <number>80</number>
         </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -96,8 +83,11 @@
       <property name="font">
        <font>
         <family>DejaVu Sans</family>
-        <pointsize>8</pointsize>
+        <pointsize>7</pointsize>
        </font>
+      </property>
+      <property name="focusPolicy">
+       <enum>Qt::StrongFocus</enum>
       </property>
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>
@@ -142,27 +132,6 @@
       </item>
       <item>
        <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="labFrameNumber">
-        <property name="text">
-         <string notr="true">Frame #: </string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="labFrame">
-        <property name="text">
-         <string>#</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
         </property>
